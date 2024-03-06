@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"net/http"
 	"strconv"
-	"sync"
 )
 
 var upgrader = websocket.Upgrader{
@@ -40,8 +39,14 @@ func generateRandomID() string {
 	}()
 }
 
-func handleUserCommunication(user *User, wg *sync.WaitGroup) {
-	defer wg.Done()
+func handleUserCommunication(user *User) {
+	defer func() {
+		if user.Conn != nil {
+			user.Conn.Close()
+			delete(activeUsers, user.ID)
+			log.Println("Connection closed for user:", user.ID)
+		}
+	}()
 	for {
 		messageType, p, err := user.Conn.ReadMessage()
 		if err != nil {
@@ -49,12 +54,10 @@ func handleUserCommunication(user *User, wg *sync.WaitGroup) {
 			return
 		}
 		for _, receiver := range activeUsers {
-			if receiver != user {
-				log.Println(user.Username, ": ", string(p))
-				if err := receiver.Conn.WriteMessage(messageType, p); err != nil {
-					log.Println(err)
-					return
-				}
+			log.Println(user.Username, ": ", string(p))
+			if err := receiver.Conn.WriteMessage(messageType, p); err != nil {
+				log.Println(err)
+				return
 			}
 		}
 	}
@@ -66,7 +69,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		Username: "Anonymous",
 		Conn:     nil,
 	}
-
 	conn, err := upgrader.Upgrade(w, r, nil)
 	user.Conn = conn
 	log.Println("Connection open for: ", user.ID)
@@ -76,22 +78,11 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	activeUsers[user.ID] = user
-	var wg sync.WaitGroup
-	wg.Add(1)
-
-	defer func() {
-		wg.Wait()
-		if user.Conn != nil {
-			user.Conn.Close()
-			delete(activeUsers, user.ID)
-			log.Println("Connection closed for user:", user.ID)
-		}
-	}()
-	go handleUserCommunication(user, &wg)
+	go handleUserCommunication(user)
 }
 
 func main() {
 	http.HandleFunc("/ws", handler)
+	http.Handle("/", http.FileServer(http.Dir("./src")))
 	log.Fatal(http.ListenAndServe(":8080", nil))
-
 }
