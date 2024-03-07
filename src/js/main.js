@@ -5,8 +5,34 @@ socket.addEventListener('open', (event) => {
 });
 
 socket.addEventListener('message', (event) => {
-    console.log('Message from server: ', event.data);
+    // console.log('Message from server: ', event.data)
     displayMessage(event.data)
+});
+
+socket.addEventListener('close', (event) => {
+    console.log('Connection closed by exit button: ', event.data)
+    // displayMessage(event.data)
+});
+
+socket.addEventListener('error', (event) => {
+    console.log('An error occurred: ', event.data)
+    displayMessage(event.data)
+});
+
+document.getElementById("closeButton").addEventListener('click', () => {
+    if (socket.readyState === WebSocket.OPEN) {
+        socket.send('Anon left the chat')
+        socket.close();
+    } else {
+        console.log('WebSocket connection is not open.');
+    }
+});
+
+window.addEventListener('beforeunload', () => {
+    if (socket.readyState === WebSocket.OPEN) {
+        socket.send("Anon exited the chat")
+        socket.close();
+    }
 });
 
 function sendMessage() {

@@ -84,5 +84,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	http.HandleFunc("/ws", handler)
 	http.Handle("/", http.FileServer(http.Dir("./src")))
+	log.Println("Server started")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
