@@ -7,16 +7,25 @@
 </head>
 
 <body>
-    <form id="chat-form">
+    <form id="join-form" style="display: block">
+        <label>
+            <input id="username-input" type="text" oninput="checkUsername()" placeholder="Enter your username" />
+        </label>
+        <button type="submit" id="join-button" onclick="toggleForms()" disabled>
+            Join
+        </button>
+    </form>
+
+    <form id="chat-form" style="display: none">
         <div id="chat-window"></div>
         <label>
             </br>
-            <input id="message-text" type="text" placeholder="Type your message..." />
+            <input id="message-input" type="text" oninput="checkMessage()" placeholder="Type your message..." />
         </label>
-        <button type="button" onclick="sendMessage()">
+        <button type="button" id="message-button" onclick="sendMessage()" disabled>
             Send
         </button>
-        <button type="button" id="closeButton">
+        <button type="button" id="close-button" onclick="toggleForms()">
             Exit
         </button>
     </form>

@@ -1,50 +1,90 @@
-const socket = new WebSocket("ws://localhost:8080/ws")
+let username = ''
 
-socket.addEventListener('open', (event) => {
-    socket.send('New Anon joined!');
-});
-
-socket.addEventListener('message', (event) => {
-    // console.log('Message from server: ', event.data)
-    displayMessage(event.data)
-});
-
-socket.addEventListener('close', (event) => {
-    console.log('Connection closed by exit button: ', event.data)
-    // displayMessage(event.data)
-});
-
-socket.addEventListener('error', (event) => {
-    console.log('An error occurred: ', event.data)
-    displayMessage(event.data)
-});
-
-document.getElementById("closeButton").addEventListener('click', () => {
-    if (socket.readyState === WebSocket.OPEN) {
-        socket.send('Anon left the chat')
-        socket.close();
-    } else {
-        console.log('WebSocket connection is not open.');
+const joinForm = document.getElementById('join-form')
+joinForm.addEventListener('submit', event => {
+    event.preventDefault()
+    username = document.getElementById("username-input").value.trim()
+    if (username !== '') {
+        joinForm.style.display = 'none'
+        connectWebSocket()
     }
-});
+})
 
-window.addEventListener('beforeunload', () => {
-    if (socket.readyState === WebSocket.OPEN) {
-        socket.send("Anon exited the chat")
-        socket.close();
-    }
-});
+let socket
 
-function sendMessage() {
-    let message = document.getElementById("message-text")
-    let messageText = message.value
-    message.value = ""
-    socket.send(messageText)
+function connectWebSocket() {
+    socket = new WebSocket(`ws://localhost:8080/ws?username=${username}`)
+
+    socket.addEventListener('open', () => {
+        socket.send(username + ' joined the chat')
+        console.log('WebSocket connection established')
+    })
+
+    socket.addEventListener('message', event => {
+        displayMessage(event.data)
+    })
+
+    socket.addEventListener('close', () => {
+        displayMessage(username + ' left the chat')
+        console.log('WebSocket connection closed')
+        socket.close()
+    })
 }
+
+document.getElementById("close-button").addEventListener("click", () => {
+    if (socket.readyState === WebSocket.OPEN) {
+        socket.send(username + " left the chat")
+        socket.close()
+    } else {
+        console.log("WebSocket connection is not open.")
+    }
+})
+
+window.addEventListener("beforeunload", () => {
+    if (socket.readyState === WebSocket.OPEN) {
+        socket.send(username + " exited the chat")
+        socket.close()
+    }
+})
 
 function displayMessage(message) {
     let chatWindow = document.getElementById("chat-window")
-    chatWindow.innerHTML += 'Anonymous: ' + message + '</br>'
+    chatWindow.innerHTML += message + "</br>"
     chatWindow.scrollTop = chatWindow.scrollHeight
-    return false
+}
+
+function sendMessage() {
+    let message = document.getElementById("message-input").value.trim()
+    const content = `${username} : ${message}`
+    if (content !== '') {
+        socket.send(content)
+        message.value = ''
+    }
+}
+
+function toggleForms() {
+    const joinForm = document.getElementById("join-form")
+    const chatForm = document.getElementById("chat-form")
+
+    if (joinForm.style.display === "none") {
+        joinForm.style.display = "block"
+        chatForm.style.display = "none"
+    } else {
+        joinForm.style.display = "none"
+        chatForm.style.display = "block"
+    }
+}
+
+function checkUsername() {
+    const usernameInput = document.getElementById("username-input")
+    const joinButton = document.getElementById("join-button")
+
+    joinButton.disabled = usernameInput.value.trim() === ""
+}
+
+function checkMessage() {
+    const messageInput = document.getElementById("message-input")
+    const messageButton = document.getElementById("message-button")
+
+    messageButton.disabled = messageInput.value.trim() === ""
 }

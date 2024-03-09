@@ -44,7 +44,7 @@ func handleUserCommunication(user *User) {
 		if user.Conn != nil {
 			user.Conn.Close()
 			delete(activeUsers, user.ID)
-			log.Println("Connection closed for user:", user.ID)
+			log.Println("Connection closed for user:", user.Username)
 		}
 	}()
 	for {
@@ -64,19 +64,24 @@ func handleUserCommunication(user *User) {
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	username := queryParams.Get("username")
+	if username == "" {
+		http.Error(w, "Required username", http.StatusBadRequest)
+		return
+	}
 	user := &User{
 		ID:       generateRandomID(),
-		Username: "Anonymous",
+		Username: username,
 		Conn:     nil,
 	}
 	conn, err := upgrader.Upgrade(w, r, nil)
-	user.Conn = conn
-	log.Println("Connection open for: ", user.ID)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-
+	user.Conn = conn
+	log.Println("Connection open for: ", user.Username)
 	activeUsers[user.ID] = user
 	go handleUserCommunication(user)
 }
