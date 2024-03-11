@@ -7,5 +7,3 @@ type User struct {
 	Username string
 	Conn     *websocket.Conn
 }
-
-var activeUsers = make(map[string]*User)

@@ -75,11 +75,26 @@ function toggleForms() {
     }
 }
 
-function checkUsername() {
-    const usernameInput = document.getElementById("username-input")
+function checkJoinForm() {
+    const roomCheckbox = document.getElementById("room-checkbox");
     const joinButton = document.getElementById("join-button")
+    const roomInput = document.getElementById("room-input");
 
-    joinButton.disabled = usernameInput.value.trim() === ""
+    const usernameInput = document.getElementById("username-input")
+
+    if (roomCheckbox.checked) {
+        roomInput.style.display = "block";
+    } else {
+        roomInput.style.display = "none"
+    }
+
+    if (usernameInput.value.trim() === "") {
+        joinButton.disabled = true
+    } else if (roomCheckbox.checked && roomInput.value.trim() === "") {
+        joinButton.disabled = true
+    } else {
+        joinButton.disabled = false
+    }
 }
 
 function checkMessage() {

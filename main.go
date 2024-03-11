@@ -39,30 +39,6 @@ func generateRandomID() string {
 	}()
 }
 
-func handleUserCommunication(user *User) {
-	defer func() {
-		if user.Conn != nil {
-			user.Conn.Close()
-			delete(activeUsers, user.ID)
-			log.Println("Connection closed for user:", user.Username)
-		}
-	}()
-	for {
-		messageType, p, err := user.Conn.ReadMessage()
-		if err != nil {
-			log.Println("WebSocket read error:", err)
-			return
-		}
-		for _, receiver := range activeUsers {
-			log.Println(user.Username, ": ", string(p))
-			if err := receiver.Conn.WriteMessage(messageType, p); err != nil {
-				log.Println(err)
-				return
-			}
-		}
-	}
-}
-
 func handler(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	username := queryParams.Get("username")
@@ -75,15 +51,18 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		Username: username,
 		Conn:     nil,
 	}
+	room := NewRoom()
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	user.Conn = conn
+	go room.handleMessages(user)
+	go room.readMessages(user)
+	room.Join <- user
 	log.Println("Connection open for: ", user.Username)
-	activeUsers[user.ID] = user
-	go handleUserCommunication(user)
 }
 
 func main() {

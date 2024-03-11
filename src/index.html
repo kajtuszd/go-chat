@@ -9,11 +9,17 @@
 <body>
     <form id="join-form" style="display: block">
         <label>
-            <input id="username-input" type="text" oninput="checkUsername()" placeholder="Enter your username" />
+            <input id="username-input" type="text" oninput="checkJoinForm()" placeholder="Enter your username" />
         </label>
         <button type="submit" id="join-button" onclick="toggleForms()" disabled>
             Join
         </button>
+        </br>
+        <input type="checkbox" id="room-checkbox" onclick="checkJoinForm()">
+        <label for="room-checkbox"> Join existing room</label></br>
+        <label>
+            <input id="room-input" type="text" oninput="checkJoinForm()" placeholder="Enter room ID" hidden/>
+        </label>
     </form>
 
     <form id="chat-form" style="display: none">
