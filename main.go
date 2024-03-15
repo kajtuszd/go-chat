@@ -39,9 +39,10 @@ func generateRandomID() string {
 	}()
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
+func handler(s Server, w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	username := queryParams.Get("username")
+	roomID := queryParams.Get("room")
 	if username == "" {
 		http.Error(w, "Required username", http.StatusBadRequest)
 		return
@@ -51,22 +52,30 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		Username: username,
 		Conn:     nil,
 	}
-	room := NewRoom()
-
+	if roomID == "" {
+		roomID = s.addRoom(NewRoom())
+	}
+	room, err := s.getRoomByID(roomID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println(err)
 		return
 	}
 	user.Conn = conn
-	go room.handleMessages(user)
+	go room.handleMessages()
 	go room.readMessages(user)
 	room.Join <- user
 	log.Println("Connection open for: ", user.Username)
 }
 
 func main() {
-	http.HandleFunc("/ws", handler)
+	server := NewServer()
+	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		handler(*server, w, r)
+	})
 	http.Handle("/", http.FileServer(http.Dir("./src")))
 	log.Println("Server started")
 	log.Fatal(http.ListenAndServe(":8080", nil))

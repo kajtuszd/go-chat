@@ -1,4 +1,5 @@
 let username = ''
+let room = ''
 
 const joinForm = document.getElementById('join-form')
 joinForm.addEventListener('submit', event => {
@@ -13,7 +14,12 @@ joinForm.addEventListener('submit', event => {
 let socket
 
 function connectWebSocket() {
-    socket = new WebSocket(`ws://localhost:8080/ws?username=${username}`)
+    room = document.getElementById("room-input").value
+    if (room !== '') {
+        socket = new WebSocket(`ws://localhost:8080/ws?username=${username}&room=${room}`)
+    } else {
+        socket = new WebSocket(`ws://localhost:8080/ws?username=${username}`)
+    }
 
     socket.addEventListener('open', () => {
         socket.send(username + ' joined the chat')
@@ -24,10 +30,18 @@ function connectWebSocket() {
         displayMessage(event.data)
     })
 
-    socket.addEventListener('close', () => {
-        displayMessage(username + ' left the chat')
+    socket.addEventListener('close', (event) => {
+        if (event.wasClean) {
+            displayMessage("[" + room + "]~ " + username + ' left the chat')
+        }
         console.log('WebSocket connection closed')
         socket.close()
+    })
+
+    socket.addEventListener('error', (error) => {
+        if (error.type === 'error') {
+            displayMessage("Room does not exist.")
+        }
     })
 }
 
@@ -58,7 +72,6 @@ function sendMessage() {
     const content = `${username} : ${message}`
     if (content !== '') {
         socket.send(content)
-        message.value = ''
     }
 }
 
@@ -76,10 +89,9 @@ function toggleForms() {
 }
 
 function checkJoinForm() {
-    const roomCheckbox = document.getElementById("room-checkbox");
+    const roomCheckbox = document.getElementById("room-checkbox")
     const joinButton = document.getElementById("join-button")
-    const roomInput = document.getElementById("room-input");
-
+    const roomInput = document.getElementById("room-input")
     const usernameInput = document.getElementById("username-input")
 
     if (roomCheckbox.checked) {

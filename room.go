@@ -19,13 +19,13 @@ type room interface {
 	addUser(user *User)
 	removeUser(user *User)
 	broadcastMessage(message string)
-	handleMessages(user *User)
+	handleMessages()
 	readMessages(user *User)
 }
 
 func NewRoom() *Room {
 	return &Room{
-		ID:        strconv.Itoa(rand.Int()),
+		ID:        strconv.Itoa(rand.Int() % 1000),
 		Join:      make(chan *User),
 		Exit:      make(chan *User),
 		Broadcast: make(chan string),
@@ -44,21 +44,13 @@ func (r *Room) removeUser(user *User) {
 
 func (r *Room) broadcastMessage(message string) {
 	for _, user := range r.Clients {
-		if err := user.Conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
-			log.Println(err)
+		if err := user.Conn.WriteMessage(websocket.TextMessage, []byte("["+r.ID+"]~ "+message)); err != nil {
 			return
 		}
-		log.Println("Room ID:  ", r.ID, "  ", user.Username, ": ", message)
 	}
 }
 
-func (r *Room) handleMessages(user *User) {
-	defer func() {
-		if user.Conn != nil {
-			r.Exit <- user
-			log.Println("Connection closed for user:", user.Username)
-		}
-	}()
+func (r *Room) handleMessages() {
 	for {
 		select {
 		case u := <-r.Join:
@@ -72,6 +64,13 @@ func (r *Room) handleMessages(user *User) {
 }
 
 func (r *Room) readMessages(user *User) {
+	defer func() {
+		if user.Conn != nil {
+			r.Exit <- user
+			log.Println("Connection closed for user:", user.Username)
+		}
+		return
+	}()
 	for {
 		_, p, err := user.Conn.ReadMessage()
 		if err != nil {
@@ -79,6 +78,5 @@ func (r *Room) readMessages(user *User) {
 			return
 		}
 		r.Broadcast <- string(p)
-		log.Println(user.Username, ": ", string(p))
 	}
 }
