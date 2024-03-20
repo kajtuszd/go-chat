@@ -22,7 +22,6 @@ function connectWebSocket() {
     }
 
     socket.addEventListener('open', () => {
-        socket.send(username + ' joined the chat')
         console.log('WebSocket connection established')
     })
 
@@ -32,7 +31,8 @@ function connectWebSocket() {
 
     socket.addEventListener('close', (event) => {
         if (event.wasClean) {
-            displayMessage("[" + room + "]~ " + username + ' left the chat')
+            socket.send(username + " left the chat")
+            displayMessage("you left the chat")
         }
         console.log('WebSocket connection closed')
         socket.close()
@@ -41,6 +41,8 @@ function connectWebSocket() {
     socket.addEventListener('error', (error) => {
         if (error.type === 'error') {
             displayMessage("Room does not exist.")
+            document.getElementById("room-input").value = ''
+            room = ''
         }
     })
 }
@@ -56,7 +58,7 @@ document.getElementById("close-button").addEventListener("click", () => {
 
 window.addEventListener("beforeunload", () => {
     if (socket.readyState === WebSocket.OPEN) {
-        socket.send(username + " exited the chat")
+        socket.send(username + " left the chat")
         socket.close()
     }
 })
@@ -69,7 +71,7 @@ function displayMessage(message) {
 
 function sendMessage() {
     let message = document.getElementById("message-input").value.trim()
-    const content = `${username} : ${message}`
+    const content = `${username}: ${message}`
     if (content !== '') {
         socket.send(content)
     }

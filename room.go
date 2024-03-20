@@ -35,6 +35,7 @@ func NewRoom() *Room {
 
 func (r *Room) addUser(user *User) {
 	r.Clients[user.ID] = user
+	r.broadcastMessage(user.Username + " joined the chat")
 }
 
 func (r *Room) removeUser(user *User) {
