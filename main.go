@@ -1,11 +1,12 @@
 package main
 
 import (
-	"github.com/gorilla/websocket"
 	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
+
+	"github.com/gorilla/websocket"
 )
 
 var upgrader = websocket.Upgrader{
@@ -65,6 +66,13 @@ func handler(s Server, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user.Conn = conn
+
+	err = user.Conn.WriteMessage(websocket.TextMessage, []byte("ROOM_ID:"+roomID))
+	if err != nil {
+		log.Println("Error sending room ID:", err)
+		return
+	}
+
 	go room.handleMessages()
 	go room.readMessages(user)
 	room.Join <- user

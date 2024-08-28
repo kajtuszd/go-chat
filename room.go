@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/gorilla/websocket"
 	"log"
 	"math/rand"
 	"strconv"
+
+	"github.com/gorilla/websocket"
 )
 
 type Room struct {
@@ -45,7 +46,7 @@ func (r *Room) removeUser(user *User) {
 
 func (r *Room) broadcastMessage(message string) {
 	for _, user := range r.Clients {
-		if err := user.Conn.WriteMessage(websocket.TextMessage, []byte("["+r.ID+"]~ "+message)); err != nil {
+		if err := user.Conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
 			return
 		}
 	}

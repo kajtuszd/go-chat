@@ -14,7 +14,7 @@ joinForm.addEventListener('submit', event => {
 let socket
 
 function connectWebSocket() {
-    room = document.getElementById("room-input").value
+    room = document.getElementById("room-input").value.trim()
     if (room !== '') {
         socket = new WebSocket(`ws://localhost:8080/ws?username=${username}&room=${room}`)
     } else {
@@ -26,7 +26,12 @@ function connectWebSocket() {
     })
 
     socket.addEventListener('message', event => {
-        displayMessage(event.data)
+        const data = event.data
+        if (data.startsWith('ROOM_ID:')) {
+            document.getElementById("room-id-value").textContent = data.substring(8)
+        } else {
+            displayMessage(data)
+        }
     })
 
     socket.addEventListener('close', (event) => {
@@ -65,7 +70,9 @@ window.addEventListener("beforeunload", () => {
 
 function displayMessage(message) {
     let chatWindow = document.getElementById("chat-window")
-    chatWindow.innerHTML += message + "</br>"
+    const isUserMessage = message.startsWith(username + ':')
+    const messageClass = isUserMessage ? 'message user' : 'message other'
+    chatWindow.innerHTML += `<div class="${messageClass}">${message}</div>`
     chatWindow.scrollTop = chatWindow.scrollHeight
 }
 
@@ -97,7 +104,7 @@ function checkJoinForm() {
     const usernameInput = document.getElementById("username-input")
 
     if (roomCheckbox.checked) {
-        roomInput.style.display = "block";
+        roomInput.style.display = "block"
     } else {
         roomInput.style.display = "none"
     }
